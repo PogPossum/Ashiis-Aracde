@@ -23,6 +23,7 @@ namespace AshiisArcadeConsole
             while (running)
             {
                 Console.Clear();
+                Console.Write("\x1b[3J\x1b[H\x1b[2J");
                 Console.WriteLine("                 ___         __    _ _ _      \r\n                /   |  _____/ /_  (_|_| )_____\r\n               / /| | / ___/ __ \\/ / /|// ___/\r\n              / ___ |(__  ) / / / / /  (__  ) \r\n           __/_/  |_/____/_/ /_/_/_/  /____/  \r\n          /   |  ______________ _____/ /__    \r\n         / /| | / ___/ ___/ __ `/ __  / _ \\   \r\n        / ___ |/ /  / /__/ /_/ / /_/ /  __/   \r\n       /_/  |_/_/   \\___/\\__,_/\\__,_/\\___/    \r\n                                              ");
                 Console.WriteLine(" ");
                 Console.WriteLine($"                  --- MAIN MENU ---");
@@ -82,6 +83,7 @@ namespace AshiisArcadeConsole
             {
 
                 Console.Clear();
+                Console.Write("\x1b[3J\x1b[H\x1b[2J");
                 Console.WriteLine("                 ___         __    _ _ _      \r\n                /   |  _____/ /_  (_|_| )_____\r\n               / /| | / ___/ __ \\/ / /|// ___/\r\n              / ___ |(__  ) / / / / /  (__  ) \r\n           __/_/  |_/____/_/ /_/_/_/  /____/  \r\n          /   |  ______________ _____/ /__    \r\n         / /| | / ___/ ___/ __ `/ __  / _ \\   \r\n        / ___ |/ /  / /__/ /_/ / /_/ /  __/   \r\n       /_/  |_/_/   \\___/\\__,_/\\__,_/\\___/    \r\n                                              ");
                 Console.WriteLine(" ");
                 Console.WriteLine($"                --- CREATION MENU ---");
@@ -138,6 +140,7 @@ namespace AshiisArcadeConsole
         static void AllEntries()
         {
             Console.Clear();
+            Console.Write("\x1b[3J\x1b[H\x1b[2J");
             Console.WriteLine("                --- All Entries ---");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine(" ");
@@ -148,19 +151,32 @@ namespace AshiisArcadeConsole
                 try
                 {
                     connection.Open();
+                    // 1. Added "order by" so that the database groups the consoles together for us
                     string sql = @"
-                        select Game.Title, Console.Console, Game.Release
-                        from [ArcadeBlockade].[dbo].[Game] join [ArcadeBlockade].[dbo].[Console]
-                        on Game.ConID = Console.ConID";
+                select Game.Title, Console.Console, Game.Release
+                from [ArcadeBlockade].[dbo].[Game] join [ArcadeBlockade].[dbo].[Console]
+                on Game.ConID = Console.ConID
+                order by Console.Console, Game.Title asc;";
 
                     using (SqlCommand cmd = new SqlCommand(sql, connection))
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
+                        // 2. Track the active console name
+                        string currentConsole = "";
+
                         while (reader.Read())
                         {
-                            // This aligns columns: 30 characters for Title, 15 for Console
-                            Console.WriteLine($"{reader["Title"].ToString().Trim().PadRight(45)} | {reader["Console"].ToString().Trim().PadRight(15)} | {reader["Release"]}");
-                            //Console.WriteLine($"{reader["Title"].ToString().Trim()}, {reader["Release"]}, {reader["Console"].ToString().Trim()}");
+                            string consoleName = reader["Console"].ToString().Trim();
+
+                            // 3. If the console changes, drop in a separator line
+                            if (!string.IsNullOrEmpty(currentConsole) && currentConsole != consoleName)
+                            {
+                                Console.WriteLine("-------------------------------------------------------------------------");
+                            }
+
+                            currentConsole = consoleName;
+
+                            Console.WriteLine($"{reader["Title"].ToString().Trim().PadRight(45)} | {consoleName.PadRight(15)} | {reader["Release"]}");
                         }
                     }
                 }
@@ -174,6 +190,7 @@ namespace AshiisArcadeConsole
         static void SearchForGame()
         {
             Console.Clear();
+            Console.Write("\x1b[3J\x1b[H\x1b[2J");
             Console.WriteLine("                --- Game Search ---");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine(" search Games with only a part of the name needed");
@@ -215,6 +232,7 @@ namespace AshiisArcadeConsole
         static void SearchForConsole()
         {
             Console.Clear();
+            Console.Write("\x1b[3J\x1b[H\x1b[2J");
             Console.WriteLine("              --- Console Search ---");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine(" search games by Consoles! ");
@@ -255,36 +273,51 @@ namespace AshiisArcadeConsole
         static void GamesCounter()
         {
             Console.Clear();
-            Console.WriteLine("               --- Games Counter ---");
+            Console.Write("\x1b[3J\x1b[H\x1b[2J");
+            Console.WriteLine("                --- Games Counter ---");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine(" With this we can see how many games we have");
             Console.WriteLine(" Pr Console");
             Console.WriteLine("----------------------------------------------------");
+
             using (SqlConnection connection = new SqlConnection(connString))
             {
                 try
                 {
                     connection.Open();
                     string sql = @"
-                        select
-                            c.Console, 
-                            count(g.Title) AS TotalGames
-                        from [ArcadeBlockade].[dbo].[Console] c
-                        left join [ArcadeBlockade].[dbo].[Game] g on c.ConID = g.ConID
-                        group by c.Console
-                        order by TotalGames desc;";
+                select
+                    c.Console, 
+                    count(g.Title) AS TotalGames
+                from [ArcadeBlockade].[dbo].[Console] c
+                left join [ArcadeBlockade].[dbo].[Game] g on c.ConID = g.ConID
+                group by c.Console
+                order by TotalGames desc;";
+
+                    // 1. Initialize a counter variable
+                    int totalGamesSum = 0;
+
                     using (SqlCommand cmd = new SqlCommand(sql, connection))
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
                         while (reader.Read())
                         {
-                            Console.WriteLine($"{reader["Console"].ToString().Trim().PadRight(30)} | {reader["TotalGames"]}");
+                            // 2. Safely parse the current console's count and add it to the sum
+                            int currentConsoleCount = Convert.ToInt32(reader["TotalGames"]);
+                            totalGamesSum += currentConsoleCount;
+
+                            Console.WriteLine($"{reader["Console"].ToString().Trim().PadRight(30)} | {currentConsoleCount}");
                         }
                     }
+
+                    // 3. Print the grand total right after the loop finishes
+                    Console.WriteLine("----------------------------------------------------");
+                    Console.WriteLine($"{"Games in Total".PadRight(30)} | {totalGamesSum}");
 
                 }
                 catch (Exception ex) { Console.WriteLine("Error: " + ex.Message); }
             }
+
             Console.WriteLine(" ");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine("Press any key to go back...");
@@ -294,6 +327,7 @@ namespace AshiisArcadeConsole
         static void OldestNewest()
         {
             Console.Clear();
+            Console.Write("\x1b[3J\x1b[H\x1b[2J");
             Console.WriteLine("           --- Oldest & Newest Games ---");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine(" Here we see oldest & newest releases!");
@@ -304,33 +338,49 @@ namespace AshiisArcadeConsole
                 {
                     connection.Open();
                     string sql = @"
-                        with RankedGames as (
-                            select
-                                Game.Title, 
-                                Console.Console, 
-                                Game.Release,
-                                row_number() over(partition by Console.ConID order by Game.Release asc) as oldest_rank,
-                                row_number() over(partition by Console.ConID order by Game.Release desc) as newest_rank
-                            from [ArcadeBlockade].[dbo].[Game]
-                            join [ArcadeBlockade].[dbo].[Console] on Game.ConID = Console.ConID
-                        )
-                        select 
-                            Console, 
-                            Title, 
-                            Release,
-                            case 
-                                when oldest_rank = 1 then 'Oldest' 
-                                when newest_rank = 1 then 'Newest' 
-                            end as status 
-                        from RankedGames
-                        where oldest_rank = 1 or newest_rank = 1
-                        order by Console, Release;";
+                with RankedGames as (
+                    select
+                        Game.Title, 
+                        Console.Console, 
+                        Game.Release,
+                        row_number() over(partition by Console.ConID order by Game.Release asc) as oldest_rank,
+                        row_number() over(partition by Console.ConID order by Game.Release desc) as newest_rank
+                    from [ArcadeBlockade].[dbo].[Game]
+                    join [ArcadeBlockade].[dbo].[Console] on Game.ConID = Console.ConID
+                )
+                select 
+                    Console, 
+                    Title, 
+                    Release,
+                    case 
+                        when oldest_rank = 1 then 'Oldest' 
+                        when newest_rank = 1 then 'Newest' 
+                    end as status 
+                from RankedGames
+                where oldest_rank = 1 or newest_rank = 1
+                order by Console, Release;";
+
                     using (SqlCommand cmd = new SqlCommand(sql, connection))
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
+                        // Creates a variable to keep track of last console
+                        string currentConsole = "";
+
                         while (reader.Read())
                         {
-                            Console.WriteLine($"{reader["Console"].ToString().Trim().PadRight(30)} | {reader["Title"].ToString().Trim().PadRight(45)} | {reader["Release"]} | {reader["status"]}");
+                            string consoleName = reader["Console"].ToString().Trim();
+
+                            // 2. If not first console, AND it's different from the last one,
+                            // print the divider before printing the new group.
+                            if (!string.IsNullOrEmpty(currentConsole) && currentConsole != consoleName)
+                            {
+                                Console.WriteLine("------------ ------------ ------------ ------------ ------------ ------------");
+                            }
+
+                            // 3. Update our tracker variable to the current console name
+                            currentConsole = consoleName;
+
+                            Console.WriteLine($"{consoleName.PadRight(30)} | {reader["Title"].ToString().Trim().PadRight(45)} | {reader["Release"]} | {reader["status"]}");
                         }
                     }
                 }
@@ -344,6 +394,7 @@ namespace AshiisArcadeConsole
         static void PeriodSearch()
         {
             Console.Clear();
+            Console.Write("\x1b[3J\x1b[H\x1b[2J");
             Console.WriteLine("               --- Period Search ---");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine(" With this we can search for games over a timespan");
@@ -389,116 +440,162 @@ namespace AshiisArcadeConsole
         static void AddNewGame()
         {
             Console.Clear();
-            Console.WriteLine("               --- Add New Games ---");
+            Console.Write("\x1b[3J\x1b[H\x1b[2J");
+            Console.WriteLine("               --- Add New Game ---");
             Console.WriteLine("============ ============ ============ ============");
-            Console.WriteLine(" --- Paste SQL-Style Values (Multiple Lines) ---");
-            Console.WriteLine(" Format: ('Title', ConID, Release Year),");
-            Console.WriteLine(" Add games and press ENTER on a blank line to finish:");
+            Console.WriteLine(" Enter the game details below:");
             Console.WriteLine("----------------------------------------------------");
 
-            StringBuilder sb = new StringBuilder();
-            string line;
+            // 1. Gather plain text inputs from the user
+            Console.Write("Enter Game Title: ");
+            string title = Console.ReadLine().Trim();
 
-            // This loop keeps grabbing lines until it hits an empty one
-            while (!string.IsNullOrWhiteSpace(line = Console.ReadLine()))
+            Console.Write("Enter Console Name (e.g., Playstation 2): ");
+            string consoleInput = Console.ReadLine().Trim();
+
+            Console.Write("Enter Release Year: ");
+            string releaseInput = Console.ReadLine().Trim();
+
+            if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(consoleInput) || string.IsNullOrEmpty(releaseInput))
             {
-                sb.AppendLine(line);
+                Console.WriteLine("\nError: All fields are required!");
+                FinishConsolePrompt();
+                return;
             }
 
-            string input = sb.ToString();
-
-            // just in case there are weird characters between the entries.
-            string pattern = @"\(\s*'(?<Title>.+?)'\s*,\s*(?<ConID>\d+)\s*,\s*(?<Release>\d+)\s*\)";
-            MatchCollection matches = Regex.Matches(input, pattern, RegexOptions.Singleline);
-
-            if (matches.Count == 0)
+            if (!int.TryParse(releaseInput, out int releaseYear))
             {
-                Console.WriteLine("No valid entries found. Check your formatting!");
-            }
-            else
-            {
-                InsertMatchesToDatabase(matches);
+                Console.WriteLine("\nError: Release year must be a valid number!");
+                FinishConsolePrompt();
+                return;
             }
 
+            // 2. Connect to the database to fetch the ConID and perform the insertion
+            using (SqlConnection connection = new SqlConnection(connString))
+            {
+                try
+                {
+                    connection.Open();
+
+                    // Step A: Look up the Console ID based on the text string typed by the user
+                    int? conID = null;
+                    string lookupSql = "select ConID from [Console] where Console = @ConsoleName";
+
+                    using (SqlCommand lookupCmd = new SqlCommand(lookupSql, connection))
+                    {
+                        lookupCmd.Parameters.AddWithValue("@ConsoleName", consoleInput);
+                        object result = lookupCmd.ExecuteScalar(); // Safely pulls back just one single value
+
+                        if (result != null && result != DBNull.Value)
+                        {
+                            conID = Convert.ToInt32(result);
+                        }
+                    }
+
+                    // Step B: If the console wasn't found, stop and notify the user
+                    if (conID == null)
+                    {
+                        Console.WriteLine($"\nError: Console '{consoleInput}' could not be found in the database!");
+                        FinishGamePrompt();
+                        return;
+                    }
+
+                    // Step C: Insert the game using the resolved ConID
+                    string insertSql = "insert into Game (Title, ConID, Release) values (@Title, @ConID, @Release)";
+                    using (SqlCommand insertCmd = new SqlCommand(insertSql, connection))
+                    {
+                        insertCmd.Parameters.AddWithValue("@Title", title);
+                        insertCmd.Parameters.AddWithValue("@ConID", conID.Value);
+                        insertCmd.Parameters.AddWithValue("@Release", releaseYear);
+
+                        insertCmd.ExecuteNonQuery();
+                        Console.WriteLine($"\nSuccess! '{title}' has been added to your collection under ID {conID.Value}.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("\nDatabase Error: " + ex.Message);
+                }
+            }
+
+            FinishGamePrompt();
+        }
+
+        // Quick helper method to keep the bottom clean
+        static void FinishGamePrompt()
+        {
             Console.WriteLine(" ");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine("Press any key to go back...");
             Console.ReadKey();
         }
         // helper method to insert the matched entries into the database
-        static void InsertMatchesToDatabase(MatchCollection matches)
-        {
-            using (SqlConnection connection = new SqlConnection(connString))
-            {
-                try
-                {
-                    connection.Open();
-                    int successCount = 0;
-
-                    foreach (Match match in matches)
-                    {
-                        string sql = "insert into Game (Title, ConID, Release) values (@Title, @ConID, @Release)";
-                        using (SqlCommand cmd = new SqlCommand(sql, connection))
-                        {
-                            cmd.Parameters.AddWithValue("@Title", match.Groups["Title"].Value.Trim());
-                            cmd.Parameters.AddWithValue("@ConID", int.Parse(match.Groups["ConID"].Value));
-                            cmd.Parameters.AddWithValue("@Release", int.Parse(match.Groups["Release"].Value));
-                            cmd.ExecuteNonQuery();
-                            successCount++;
-                        }
-                    }
-                    Console.WriteLine($"Success! Added {successCount} games.");
-                }
-                catch (Exception ex) { Console.WriteLine("\nDatabase Error: " + ex.Message); }
-            }
-        }
         static void AddNewConsole()
         {
             Console.Clear();
-            Console.WriteLine("             --- Add New Consoles ---");
+            Console.Write("\x1b[3J\x1b[H\x1b[2J");
+            Console.WriteLine("             --- Add New Console ---");
             Console.WriteLine("============ ============ ============ ============");
-            Console.WriteLine(" --- Paste Console SQL-Style Values ---");
-            Console.WriteLine(" Format: (ConID, 'ConsoleName', 'Company'),");
-            Console.WriteLine(" Paste your block and press ENTER on a blank line:");
+            Console.WriteLine(" Enter the console details below:");
             Console.WriteLine("----------------------------------------------------");
 
-            StringBuilder sb = new StringBuilder();
-            string line;
-            while (!string.IsNullOrWhiteSpace(line = Console.ReadLine()))
+            // 1. Collect inputs step-by-step
+            Console.Write("Enter Console ID (e.g., 402): ");
+            string idInput = Console.ReadLine().Trim();
+
+            Console.Write("Enter Console Name (e.g., Playstation 2): ");
+            string consoleName = Console.ReadLine().Trim();
+
+            Console.Write("Enter Company (e.g., Sony): ");
+            string company = Console.ReadLine().Trim();
+
+            // 2. Validate inputs
+            if (string.IsNullOrEmpty(idInput) || string.IsNullOrEmpty(consoleName) || string.IsNullOrEmpty(company))
             {
-                sb.AppendLine(line);
+                Console.WriteLine("\nError: All fields are required!");
+                FinishConsolePrompt();
+                return;
             }
 
+            if (!int.TryParse(idInput, out int conID))
+            {
+                Console.WriteLine("\nError: Console ID must be a valid number!");
+                FinishConsolePrompt();
+                return;
+            }
+
+            // 3. Insert into the database
             using (SqlConnection connection = new SqlConnection(connString))
             {
                 try
                 {
                     connection.Open();
-                    int successCount = 0;
-                    var entries = sb.ToString().Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
-                    foreach (var entry in entries)
+
+                    string sql = "insert into Console (ConID, Console, Company) values (@ConID, @Console, @Company)";
+
+                    using (SqlCommand cmd = new SqlCommand(sql, connection))
                     {
-                        string clean = entry.Trim().TrimEnd(',').Replace("(", "").Replace(")", "").Replace("'", "");
-                        string[] parts = clean.Split(',');
+                        cmd.Parameters.AddWithValue("@ConID", conID);
+                        cmd.Parameters.AddWithValue("@Console", consoleName);
+                        cmd.Parameters.AddWithValue("@Company", company);
 
-                        if (parts.Length == 3)
-                        {
-                            string sql = "insert into Console (ConID, Console, Company) values (@ConID, @Console, @Company)";
-
-                            using (SqlCommand cmd = new SqlCommand(sql, connection))
-                            {
-                                cmd.Parameters.AddWithValue("@ConID", int.Parse(parts[0].Trim()));
-                                cmd.Parameters.AddWithValue("@Console", parts[1].Trim());
-                                cmd.Parameters.AddWithValue("@Company", parts[2].Trim());
-                                cmd.ExecuteNonQuery();
-                                successCount++;
-                            }
-                        }
+                        cmd.ExecuteNonQuery();
+                        Console.WriteLine($"\nSuccess! '{consoleName}' has been added to your database under ID {conID}.");
                     }
-                    Console.WriteLine($"Successfully added {successCount} consoles!");
                 }
-                catch (Exception ex) { Console.WriteLine("Error: " + ex.Message); }
+                catch (Exception ex)
+                {
+                    // This will gracefully capture things like Primary Key violations (if ID 402 already exists)
+                    Console.WriteLine("\nDatabase Error: " + ex.Message);
+                }
             }
+
+            FinishConsolePrompt();
+        }
+
+        // Quick helper to keep the bottom clean
+        static void FinishConsolePrompt()
+        {
             Console.WriteLine(" ");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine("Press any key to go back...");
@@ -507,6 +604,7 @@ namespace AshiisArcadeConsole
         static void ShowConsoleEntries()
         {
             Console.Clear();
+            Console.Write("\x1b[3J\x1b[H\x1b[2J");
             Console.WriteLine("           --- Console Details ---");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine(" This shows all console details!");
@@ -540,6 +638,7 @@ namespace AshiisArcadeConsole
         static void ShowGameEntries()
         {
             Console.Clear();
+            Console.Write("\x1b[3J\x1b[H\x1b[2J");
             Console.WriteLine("             --- Game Details ---");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine(" This shows all game details!");
@@ -574,6 +673,7 @@ namespace AshiisArcadeConsole
         static void DeleteGames()
         {
             Console.Clear();
+            Console.Write("\x1b[3J\x1b[H\x1b[2J");
             Console.WriteLine("           --- Delete Games by Title ---");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine(" Enter titles separated by commas or new lines.");
@@ -664,6 +764,7 @@ namespace AshiisArcadeConsole
         static void DeleteConsoles()
         {
             Console.Clear();
+            Console.Write("\x1b[3J\x1b[H\x1b[2J");
             Console.WriteLine("          --- Delete Consoles by Name ---");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine(" Enter names separated by commas or new lines.");
@@ -767,6 +868,7 @@ namespace AshiisArcadeConsole
         static void ConsoleIDs()
         {
             Console.Clear();
+            Console.Write("\x1b[3J\x1b[H\x1b[2J");
             Console.WriteLine("               --- Console IDs ---");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine(" ");
@@ -778,7 +880,7 @@ namespace AshiisArcadeConsole
             Console.WriteLine("--N64               103     -- Commodore 30x--");
             Console.WriteLine("--GameCube          104  ------------------------");
             Console.WriteLine("--Gameboy           105  --Commodore 64      301");
-            Console.WriteLine("--Gameboy Colour    106");
+            Console.WriteLine("--Gameboy Colour    106  --Amiga 500         302");
             Console.WriteLine("--Gameboy Advance   107");
             Console.WriteLine("--Gameboy Advance   108");
             Console.WriteLine("--Nintendo DS       109");
