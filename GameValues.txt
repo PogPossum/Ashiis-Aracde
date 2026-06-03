@@ -130,6 +130,7 @@
     ('Digimon World', 401, 1999),
 --Playstation 2
     ('Sly Cooper 3 Honor Among Thieves', 402, 2005),
+    ('Lego Star Wars The Video Game', 402, 2005),
     ('Lego Star Wars II: The Original Trilogy', 402, 2006),
     ('Ratchet & Clank: Going Commando', 402, 2003),
     ('Crash Bandicoot: Wrath of Cortex', 402, 2001),
