@@ -32,8 +32,8 @@ namespace AshiisArcadeConsole
                 Console.WriteLine($"SYSTEM TIME: {DateTime.Now:dd/MM/yyyy HH:mm} | STATUS: OPERATIONAL");
                 Console.WriteLine("======================================================");
                 Console.WriteLine(" [1] All entries           [4] Games counter");
-                Console.WriteLine(" [2] Search for game       [5] oldest + newest release");
-                Console.WriteLine(" [3] Search for console    [6] timespan search");
+                Console.WriteLine(" [2] Search for game       [5] Oldest/Newest releases");
+                Console.WriteLine(" [3] Search for console    [6] Timespan search");
                 Console.WriteLine(" ");
                 Console.WriteLine(" [9] Creation Menu         [0] Exit App");
                 Console.WriteLine("======================================================");
