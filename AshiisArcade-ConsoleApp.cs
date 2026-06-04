@@ -92,10 +92,10 @@ namespace AshiisArcadeConsole
                 Console.WriteLine("======================================================");
                 Console.WriteLine($"SYSTEM TIME: {DateTime.Now:dd/MM/yyyy HH:mm} | STATUS: OPERATIONAL");
                 Console.WriteLine("======================================================");
-                Console.WriteLine(" [1] Add game              [5] Delete Games");
-                Console.WriteLine(" [2] Add console           [6] Delete Consoles");
-                Console.WriteLine(" [3] Select * from Games   [7] Console IDs");
-                Console.WriteLine(" [4] Select * from Console");
+                Console.WriteLine(" [1] Add game              [5] Add games in bulk");
+                Console.WriteLine(" [2] Add console           [6] Delete Games");
+                Console.WriteLine(" [3] Select * from Games   [7] Delete Consoles");
+                Console.WriteLine(" [4] Select * from Console [8] Console IDs");
                 Console.WriteLine(" ");
                 Console.WriteLine(" [9] Return to previous    [0] Exit App");
                 Console.WriteLine("======================================================");
@@ -117,12 +117,15 @@ namespace AshiisArcadeConsole
                         ShowConsoleEntries();
                         break;
                     case "5":
-                        DeleteGames();
+                        AddGamesBulk();
                         break;
                     case "6":
-                        DeleteConsoles();
+                        DeleteGames();
                         break;
                     case "7":
+                        DeleteConsoles();
+                        break;
+                    case "8":
                         ConsoleIDs();
                         break;
                     case "9":
@@ -159,7 +162,7 @@ namespace AshiisArcadeConsole
                 select Game.Title, Console.Console, Game.Release
                 from [ArcadeBlockade].[dbo].[Game] join [ArcadeBlockade].[dbo].[Console]
                 on Game.ConID = Console.ConID
-                order by Console.Console, Game.Title asc;";
+                order by Console.ConID, Game.Title asc;";
 
                     using (SqlCommand cmd = new SqlCommand(sql, connection))
                     using (SqlDataReader reader = cmd.ExecuteReader())
@@ -459,7 +462,7 @@ namespace AshiisArcadeConsole
             Console.Write("Enter Game Title: ");
             string title = Console.ReadLine().Trim();
 
-            Console.Write("Enter Console Name (e.g., Playstation 2): ");
+            Console.Write("Enter Console Name: ");
             string consoleInput = Console.ReadLine().Trim();
 
             Console.Write("Enter Release Year: ");
@@ -530,7 +533,7 @@ namespace AshiisArcadeConsole
             FinishGamePrompt();
         }
 
-        // Quick helper method to keep the bottom clean
+        // keeps the bottom clean
         static void FinishGamePrompt()
         {
             Console.WriteLine(" ");
@@ -538,7 +541,7 @@ namespace AshiisArcadeConsole
             Console.WriteLine("Press any key to go back...");
             Console.ReadKey();
         }
-        // helper method to insert the matched entries into the database
+        // inserts the matched entries into the database
         static void AddNewConsole()
         {
             Console.Clear();
@@ -603,7 +606,7 @@ namespace AshiisArcadeConsole
             FinishConsolePrompt();
         }
 
-        // Quick helper to keep the bottom clean
+        // keeps the bottom clean
         static void FinishConsolePrompt()
         {
             Console.WriteLine(" ");
@@ -677,6 +680,112 @@ namespace AshiisArcadeConsole
                 }
                 catch (Exception ex) { Console.WriteLine("Error: " + ex.Message); }
             }
+            Console.WriteLine(" ");
+            Console.WriteLine("============ ============ ============ ============");
+            Console.WriteLine("Press any key to go back...");
+            Console.ReadKey();
+        }
+        static void AddGamesBulk()
+        {
+            Console.Clear();
+            Console.Write("\x1b[3J\x1b[H\x1b[2J");
+            Console.WriteLine("             --- Bulk Add New Games ---");
+            Console.WriteLine("============ ============ ============ ============");
+            Console.WriteLine(" --- Paste SQL-Style Values (Multiple Lines) ---");
+            Console.WriteLine(" Format: ('Title', Console Name, Release Year),");
+            Console.WriteLine(" Example: ('Sonic', Sega Genesis, 1991),");
+            Console.WriteLine(" Add games and press ENTER on a blank line to finish:");
+            Console.WriteLine("----------------------------------------------------");
+
+            StringBuilder sb = new StringBuilder();
+            string line;
+
+            // Grab lines until hitting an empty line
+            while (!string.IsNullOrWhiteSpace(line = Console.ReadLine()))
+            {
+                sb.AppendLine(line);
+            }
+
+            string input = sb.ToString();
+
+            // Regular expression updated to capture the Console NAME as text instead of a strict digit
+            string pattern = @"\(\s*'(?<Title>.+?)'\s*,\s*(?<ConsoleName>[^,]+)\s*,\s*(?<Release>\d+)\s*\)";
+            MatchCollection matches = Regex.Matches(input, pattern, RegexOptions.Singleline);
+
+            if (matches.Count == 0)
+            {
+                Console.WriteLine("\nNo valid entries found. Check your formatting!");
+                FinishBulkPrompt();
+                return;
+            }
+
+            // Process entries and map Console Names to real Database IDs
+            using (SqlConnection connection = new SqlConnection(connString))
+            {
+                try
+                {
+                    connection.Open();
+                    int successCount = 0;
+                    int failureCount = 0;
+
+                    foreach (Match match in matches)
+                    {
+                        string title = match.Groups["Title"].Value.Trim();
+                        string consoleName = match.Groups["ConsoleName"].Value.Trim();
+                        string releaseStr = match.Groups["Release"].Value.Trim();
+
+                        // 1. Quick lookup to turn "Sega Genesis" (or whatever was typed) into a ConID
+                        int? conID = null;
+                        string lookupSql = "select ConID from [Console] where Console = @ConsoleName";
+
+                        using (SqlCommand lookupCmd = new SqlCommand(lookupSql, connection))
+                        {
+                            lookupCmd.Parameters.AddWithValue("@ConsoleName", consoleName);
+                            object result = lookupCmd.ExecuteScalar();
+                            if (result != null && result != DBNull.Value)
+                            {
+                                conID = Convert.ToInt32(result);
+                            }
+                        }
+
+                        // 2. If the console exists, insert the game
+                        if (conID != null)
+                        {
+                            string insertSql = "insert into Game (Title, ConID, Release) values (@Title, @ConID, @Release)";
+                            using (SqlCommand insertCmd = new SqlCommand(insertSql, connection))
+                            {
+                                insertCmd.Parameters.AddWithValue("@Title", title);
+                                insertCmd.Parameters.AddWithValue("@ConID", conID.Value);
+                                insertCmd.Parameters.AddWithValue("@Release", int.Parse(releaseStr));
+
+                                insertCmd.ExecuteNonQuery();
+                                successCount++;
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Skipped: '{title}' -> Console '{consoleName}' not found in DB.");
+                            failureCount++;
+                        }
+                    }
+
+                    Console.WriteLine($"\nProcessing Complete!");
+                    Console.WriteLine($"Successfully added: {successCount} games.");
+                    if (failureCount > 0)
+                    {
+                        Console.WriteLine($"Skipped/Failed: {failureCount} games due to missing console names.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("\nDatabase Error: " + ex.Message);
+                }
+            }
+
+            FinishBulkPrompt();
+        }
+        static void FinishBulkPrompt()
+        {
             Console.WriteLine(" ");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine("Press any key to go back...");
@@ -888,11 +997,11 @@ namespace AshiisArcadeConsole
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine(" ");
             Console.WriteLine("------------------------ ------------------------");
-            Console.WriteLine("    --Nintendo 10x--          -- Atari 20x--");
+            Console.WriteLine("    -- Nintendo 10x --        -- Atari 20x --");
             Console.WriteLine("------------------------ ------------------------");
             Console.WriteLine("--NES               101  --Atari 2600        201");
             Console.WriteLine("--SNES              102  ------------------------");
-            Console.WriteLine("--N64               103     -- Commodore 30x--");
+            Console.WriteLine("--N64               103     -- Commodore 30x --");
             Console.WriteLine("--GameCube          104  ------------------------");
             Console.WriteLine("--Gameboy           105  --Commodore 64      301");
             Console.WriteLine("--Gameboy Colour    106  --Amiga 500         302");
@@ -905,11 +1014,16 @@ namespace AshiisArcadeConsole
             Console.WriteLine("--Nintendo Switch   113");
             Console.WriteLine(" ");
             Console.WriteLine("------------------------ ------------------------");
-            Console.WriteLine("    -- Sony 40x--           -- Microsoft 50x--");
+            Console.WriteLine("    -- Sony 40x --          -- Microsoft 50x --");
             Console.WriteLine("------------------------ ------------------------");
             Console.WriteLine("--Playstation 1     401  --Xbox              501");
             Console.WriteLine("--Playstation 2     402  --Xbox 360          502");
             Console.WriteLine("--Playstation 3     403  --Xbox One          503");
+            Console.WriteLine(" ");
+            Console.WriteLine("------------------------");
+            Console.WriteLine("     -- PC 90x --");
+            Console.WriteLine("------------------------");
+            Console.WriteLine("--PC                901 ");
             Console.WriteLine(" ");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine("Press any key to go back...");
