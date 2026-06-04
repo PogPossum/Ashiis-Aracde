@@ -24,6 +24,7 @@ namespace AshiisArcadeConsole
             {
                 Console.Clear();
                 Console.Write("\x1b[3J\x1b[H\x1b[2J");
+                Console.Clear();
                 Console.WriteLine("                 ___         __    _ _ _      \r\n                /   |  _____/ /_  (_|_| )_____\r\n               / /| | / ___/ __ \\/ / /|// ___/\r\n              / ___ |(__  ) / / / / /  (__  ) \r\n           __/_/  |_/____/_/ /_/_/_/  /____/  \r\n          /   |  ______________ _____/ /__    \r\n         / /| | / ___/ ___/ __ `/ __  / _ \\   \r\n        / ___ |/ /  / /__/ /_/ / /_/ /  __/   \r\n       /_/  |_/_/   \\___/\\__,_/\\__,_/\\___/    \r\n                                              ");
                 Console.WriteLine(" ");
                 Console.WriteLine($"                  --- MAIN MENU ---");
@@ -84,6 +85,7 @@ namespace AshiisArcadeConsole
 
                 Console.Clear();
                 Console.Write("\x1b[3J\x1b[H\x1b[2J");
+                Console.Clear();
                 Console.WriteLine("                 ___         __    _ _ _      \r\n                /   |  _____/ /_  (_|_| )_____\r\n               / /| | / ___/ __ \\/ / /|// ___/\r\n              / ___ |(__  ) / / / / /  (__  ) \r\n           __/_/  |_/____/_/ /_/_/_/  /____/  \r\n          /   |  ______________ _____/ /__    \r\n         / /| | / ___/ ___/ __ `/ __  / _ \\   \r\n        / ___ |/ /  / /__/ /_/ / /_/ /  __/   \r\n       /_/  |_/_/   \\___/\\__,_/\\__,_/\\___/    \r\n                                              ");
                 Console.WriteLine(" ");
                 Console.WriteLine($"                --- CREATION MENU ---");
@@ -141,6 +143,7 @@ namespace AshiisArcadeConsole
         {
             Console.Clear();
             Console.Write("\x1b[3J\x1b[H\x1b[2J");
+            Console.Clear();
             Console.WriteLine("                --- All Entries ---");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine(" ");
@@ -191,6 +194,7 @@ namespace AshiisArcadeConsole
         {
             Console.Clear();
             Console.Write("\x1b[3J\x1b[H\x1b[2J");
+            Console.Clear();
             Console.WriteLine("                --- Game Search ---");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine(" search Games with only a part of the name needed");
@@ -233,6 +237,7 @@ namespace AshiisArcadeConsole
         {
             Console.Clear();
             Console.Write("\x1b[3J\x1b[H\x1b[2J");
+            Console.Clear();
             Console.WriteLine("              --- Console Search ---");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine(" search games by Consoles! ");
@@ -274,6 +279,7 @@ namespace AshiisArcadeConsole
         {
             Console.Clear();
             Console.Write("\x1b[3J\x1b[H\x1b[2J");
+            Console.Clear();
             Console.WriteLine("                --- Games Counter ---");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine(" With this we can see how many games we have");
@@ -328,6 +334,7 @@ namespace AshiisArcadeConsole
         {
             Console.Clear();
             Console.Write("\x1b[3J\x1b[H\x1b[2J");
+            Console.Clear();
             Console.WriteLine("           --- Oldest & Newest Games ---");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine(" Here we see oldest & newest releases!");
@@ -395,6 +402,7 @@ namespace AshiisArcadeConsole
         {
             Console.Clear();
             Console.Write("\x1b[3J\x1b[H\x1b[2J");
+            Console.Clear();
             Console.WriteLine("               --- Period Search ---");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine(" With this we can search for games over a timespan");
@@ -441,6 +449,7 @@ namespace AshiisArcadeConsole
         {
             Console.Clear();
             Console.Write("\x1b[3J\x1b[H\x1b[2J");
+            Console.Clear();
             Console.WriteLine("               --- Add New Game ---");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine(" Enter the game details below:");
@@ -534,6 +543,7 @@ namespace AshiisArcadeConsole
         {
             Console.Clear();
             Console.Write("\x1b[3J\x1b[H\x1b[2J");
+            Console.Clear();
             Console.WriteLine("             --- Add New Console ---");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine(" Enter the console details below:");
@@ -605,6 +615,7 @@ namespace AshiisArcadeConsole
         {
             Console.Clear();
             Console.Write("\x1b[3J\x1b[H\x1b[2J");
+            Console.Clear();
             Console.WriteLine("           --- Console Details ---");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine(" This shows all console details!");
@@ -639,6 +650,7 @@ namespace AshiisArcadeConsole
         {
             Console.Clear();
             Console.Write("\x1b[3J\x1b[H\x1b[2J");
+            Console.Clear();
             Console.WriteLine("             --- Game Details ---");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine(" This shows all game details!");
@@ -674,6 +686,7 @@ namespace AshiisArcadeConsole
         {
             Console.Clear();
             Console.Write("\x1b[3J\x1b[H\x1b[2J");
+            Console.Clear();
             Console.WriteLine("           --- Delete Games by Title ---");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine(" Enter titles separated by commas or new lines.");
@@ -765,6 +778,7 @@ namespace AshiisArcadeConsole
         {
             Console.Clear();
             Console.Write("\x1b[3J\x1b[H\x1b[2J");
+            Console.Clear();
             Console.WriteLine("          --- Delete Consoles by Name ---");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine(" Enter names separated by commas or new lines.");
@@ -869,6 +883,7 @@ namespace AshiisArcadeConsole
         {
             Console.Clear();
             Console.Write("\x1b[3J\x1b[H\x1b[2J");
+            Console.Clear();
             Console.WriteLine("               --- Console IDs ---");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine(" ");
