@@ -10,7 +10,7 @@ namespace AshiisArcadeConsole
 {
     internal class Program
     {
-        static string connString = @"Server=x.x.x.x,1433;Database=ArcadeDatabase;User Id=urmom;Password=Password1;TrustServerCertificate=True;";
+        static string connString = @"Server=x.x.x.x,1433;Database=ArcadeDB;User Id=user;Password=Password1;TrustServerCertificate=True;";
         static void Main(string[] args)
         {
             MainMenu();
@@ -544,67 +544,77 @@ namespace AshiisArcadeConsole
         // inserts the matched entries into the database
         static void AddNewConsole()
         {
-            Console.Clear();
-            Console.Write("\x1b[3J\x1b[H\x1b[2J");
-            Console.Clear();
-            Console.WriteLine("             --- Add New Console ---");
-            Console.WriteLine("============ ============ ============ ============");
-            Console.WriteLine(" Enter the console details below:");
-            Console.WriteLine("----------------------------------------------------");
+    Console.Clear();
+    Console.Write("\x1b[3J\x1b[H\x1b[2J");
+    Console.WriteLine("             --- Add New Console ---");
+    Console.WriteLine("============ ============ ============ ============");
+    Console.WriteLine(" Enter the console details below:");
+    Console.WriteLine("----------------------------------------------------");
 
-            // 1. Collect inputs step-by-step
-            Console.Write("Enter Console ID (e.g., 402): ");
-            string idInput = Console.ReadLine().Trim();
+    // 1. Collect inputs step-by-step (Added Release Year prompt)
+    Console.Write("Enter Console ID (e.g., 402): ");
+    string idInput = Console.ReadLine().Trim();
 
-            Console.Write("Enter Console Name (e.g., Playstation 2): ");
-            string consoleName = Console.ReadLine().Trim();
+    Console.Write("Enter Console Name (e.g., Playstation 2): ");
+    string consoleName = Console.ReadLine().Trim();
 
-            Console.Write("Enter Company (e.g., Sony): ");
-            string company = Console.ReadLine().Trim();
+    Console.Write("Enter Company (e.g., Sony): ");
+    string company = Console.ReadLine().Trim();
 
-            // 2. Validate inputs
-            if (string.IsNullOrEmpty(idInput) || string.IsNullOrEmpty(consoleName) || string.IsNullOrEmpty(company))
+    Console.Write("Enter Console Release Year (e.g., 2000): ");
+    string releaseInput = Console.ReadLine().Trim();
+
+    // 2. Validate inputs
+    if (string.IsNullOrEmpty(idInput) || string.IsNullOrEmpty(consoleName) || string.IsNullOrEmpty(company) || string.IsNullOrEmpty(releaseInput))
+    {
+        Console.WriteLine("\nError: All fields are required!");
+        FinishConsolePrompt();
+        return;
+    }
+
+    if (!int.TryParse(idInput, out int conID))
+    {
+        Console.WriteLine("\nError: Console ID must be a valid number!");
+        FinishConsolePrompt();
+        return;
+    }
+
+    if (!int.TryParse(releaseInput, out int releaseYear))
+    {
+        Console.WriteLine("\nError: Release year must be a valid number!");
+        FinishConsolePrompt();
+        return;
+    }
+
+    // 3. Insert into the database
+    using (SqlConnection connection = new SqlConnection(connString))
+    {
+        try
+        {
+            connection.Open();
+
+            // Updated SQL statement to include the Release column
+            string sql = "insert into Console (ConID, Console, Company, Release) values (@ConID, @Console, @Company, @Release)";
+
+            using (SqlCommand cmd = new SqlCommand(sql, connection))
             {
-                Console.WriteLine("\nError: All fields are required!");
-                FinishConsolePrompt();
-                return;
+                cmd.Parameters.AddWithValue("@ConID", conID);
+                cmd.Parameters.AddWithValue("@Console", consoleName);
+                cmd.Parameters.AddWithValue("@Company", company);
+                cmd.Parameters.AddWithValue("@Release", releaseYear); // Added parameter mapping
+
+                cmd.ExecuteNonQuery();
+                Console.WriteLine($"\nSuccess! '{consoleName}' ({releaseYear}) has been added to your database under ID {conID}.");
             }
-
-            if (!int.TryParse(idInput, out int conID))
-            {
-                Console.WriteLine("\nError: Console ID must be a valid number!");
-                FinishConsolePrompt();
-                return;
-            }
-
-            // 3. Insert into the database
-            using (SqlConnection connection = new SqlConnection(connString))
-            {
-                try
-                {
-                    connection.Open();
-
-                    string sql = "insert into Console (ConID, Console, Company) values (@ConID, @Console, @Company)";
-
-                    using (SqlCommand cmd = new SqlCommand(sql, connection))
-                    {
-                        cmd.Parameters.AddWithValue("@ConID", conID);
-                        cmd.Parameters.AddWithValue("@Console", consoleName);
-                        cmd.Parameters.AddWithValue("@Company", company);
-
-                        cmd.ExecuteNonQuery();
-                        Console.WriteLine($"\nSuccess! '{consoleName}' has been added to your database under ID {conID}.");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    // This will gracefully capture things like Primary Key violations (if ID 402 already exists)
-                    Console.WriteLine("\nDatabase Error: " + ex.Message);
-                }
-            }
-
-            FinishConsolePrompt();
         }
+        catch (Exception ex)
+        {
+            Console.WriteLine("\nDatabase Error: " + ex.Message);
+        }
+    }
+
+    FinishConsolePrompt();
+}
 
         // keeps the bottom clean
         static void FinishConsolePrompt()
@@ -999,31 +1009,31 @@ namespace AshiisArcadeConsole
             Console.WriteLine("------------------------ ------------------------");
             Console.WriteLine("    -- Nintendo 10x --        -- Atari 20x --");
             Console.WriteLine("------------------------ ------------------------");
-            Console.WriteLine("--NES               101  --Atari 2600        201");
-            Console.WriteLine("--SNES              102  ------------------------");
-            Console.WriteLine("--N64               103     -- Commodore 30x --");
-            Console.WriteLine("--GameCube          104  ------------------------");
-            Console.WriteLine("--Gameboy           105  --Commodore 64      301");
-            Console.WriteLine("--Gameboy Colour    106  --Amiga 500         302");
-            Console.WriteLine("--Gameboy Advance   107");
-            Console.WriteLine("--Gameboy Advance   108");
-            Console.WriteLine("--Nintendo DS       109");
-            Console.WriteLine("--Nintendo DS Lite  110");
-            Console.WriteLine("--Nintendo DS XL    111");
-            Console.WriteLine("--Nintendo Wii      112");
-            Console.WriteLine("--Nintendo Switch   113");
+            Console.WriteLine("--NES                101  --Atari 2600        201");
+            Console.WriteLine("--SNES               102  ------------------------");
+            Console.WriteLine("--N64                103     -- Commodore 30x --");
+            Console.WriteLine("--GameCube           104  ------------------------");
+            Console.WriteLine("--Gameboy            105  --Commodore 64      301");
+            Console.WriteLine("--Gameboy Colour     106  --Amiga 500         302");
+            Console.WriteLine("--Gameboy Advance    107");
+            Console.WriteLine("--Gameboy Advance SP 108");
+            Console.WriteLine("--Nintendo DS        109");
+            Console.WriteLine("--Nintendo DS Lite   110");
+            Console.WriteLine("--Nintendo DS XL     111");
+            Console.WriteLine("--Nintendo Wii       112");
+            Console.WriteLine("--Nintendo Switch    113");
             Console.WriteLine(" ");
             Console.WriteLine("------------------------ ------------------------");
             Console.WriteLine("    -- Sony 40x --          -- Microsoft 50x --");
             Console.WriteLine("------------------------ ------------------------");
-            Console.WriteLine("--Playstation 1     401  --Xbox              501");
-            Console.WriteLine("--Playstation 2     402  --Xbox 360          502");
-            Console.WriteLine("--Playstation 3     403  --Xbox One          503");
+            Console.WriteLine("--Playstation 1      401  --Xbox              501");
+            Console.WriteLine("--Playstation 2      402  --Xbox 360          502");
+            Console.WriteLine("--Playstation 3      403  --Xbox One          503");
             Console.WriteLine(" ");
             Console.WriteLine("------------------------");
             Console.WriteLine("     -- PC 90x --");
             Console.WriteLine("------------------------");
-            Console.WriteLine("--PC                901 ");
+            Console.WriteLine("--PC                 901 ");
             Console.WriteLine(" ");
             Console.WriteLine("============ ============ ============ ============");
             Console.WriteLine("Press any key to go back...");
